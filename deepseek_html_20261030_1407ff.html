@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全球时钟 · World Clock</title>
+<style>
+  :root {
+    --bg: #0b0f19;
+    --card-bg: #151b2b;
+    --card-border: #232d42;
+    --text-main: #f0f4f8;
+    --text-sub: #8b9bb4;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--bg);
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(129, 140, 248, 0.05) 0%, transparent 40%);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .title-area h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+    background: linear-gradient(90deg, #fff, #8b9bb4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .title-area p {
+    color: var(--text-sub);
+    font-size: 14px;
+  }
+
+  .local-time-area {
+    text-align: right;
+    background: rgba(21, 27, 43, 0.6);
+    border: 1px solid var(--card-border);
+    padding: 12px 20px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+  }
+
+  .local-time-area span {
+    display: block;
+    font-size: 12px;
+    color: var(--text-sub);
+    margin-bottom: 4px;
+  }
+
+  .local-time-area .time {
+    font-size: 24px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  .search-box {
+    width: 100%;
+    margin-bottom: 30px;
+    position: relative;
+  }
+
+  .search-box svg {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    stroke: var(--text-sub);
+  }
+
+  .search-box input {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-main);
+    padding: 16px 16px 16px 48px;
+    border-radius: 12px;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.3s;
+  }
+
+  .search-box input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .search-box input::placeholder { color: #5e6a80; }
+
+  .clock-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+
+  .clock-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .clock-card:hover {
+    transform: translateY(-4px);
+    border-color: #3b4a66;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .city-info h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+  }
+
+  .city-info .timezone {
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+
+  .status-icon {
+    font-size: 24px;
+    filter: drop-shadow(0 0 8px rgba(0,0,0,0.5));
+  }
+
+  .time-display {
+    font-size: 42px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .time-display .seconds {
+    font-size: 24px;
+    color: var(--text-sub);
+    margin-left: 4px;
+    letter-spacing: 0;
+  }
+
+  .date-display {
+    font-size: 13px;
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 0;
+    color: var(--text-sub);
+    font-size: 15px;
+  }
+
+  @media (max-width: 600px) {
+    .header { flex-direction: column; align-items: flex-start; }
+    .local-time-area { width: 100%; text-align: left; }
+    .time-display { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="title-area">
+      <h1>全球时钟</h1>
+      <p>实时追踪世界各地的当前时间</p>
+    </div>
+    <div class="local-time-area">
+      <span>您的本地时间</span>
+      <div class="time" id="localTime">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input type="text" id="searchInput" placeholder="搜索城市（如：北京、纽约、London...）" autocomplete="off">
+  </div>
+
+  <div class="clock-grid" id="clockGrid">
+    <!-- 卡片由 JS 动态生成 -->
+  </div>
+</div>
+
+<script>
+  const CITIES = [
+    { name: '北京', en: 'Beijing', timezone: 'Asia/Shanghai' },
+    { name: '东京', en: 'Tokyo', timezone: 'Asia/Tokyo' },
+    { name: '首尔', en: 'Seoul', timezone: 'Asia/Seoul' },
+    { name: '新加坡', en: 'Singapore', timezone: 'Asia/Singapore' },
+    { name: '迪拜', en: 'Dubai', timezone: 'Asia/Dubai' },
+    { name: '伦敦', en: 'London', timezone: 'Europe/London' },
+    { name: '巴黎', en: 'Paris', timezone: 'Europe/Paris' },
+    { name: '莫斯科', en: 'Moscow', timezone: 'Europe/Moscow' },
+    { name: '纽约', en: 'New York', timezone: 'America/New_York' },
+    { name: '洛杉矶', en: 'Los Angeles', timezone: 'America/Los_Angeles' },
+    { name: '芝加哥', en: 'Chicago', timezone: 'America/Chicago' },
+    { name: '圣保罗', en: 'São Paulo', timezone: 'America/Sao_Paulo' },
+    { name: '悉尼', en: 'Sydney', timezone: 'Australia/Sydney' },
+    { name: '奥克兰', en: 'Auckland', timezone: 'Pacific/Auckland' },
+    { name: '开罗', en: 'Cairo', timezone: 'Africa/Cairo' },
+    { name: '约翰内斯堡', en: 'Johannesburg', timezone: 'Africa/Johannesburg' }
+  ];
+
+  const searchInput = document.getElementById('searchInput');
+  const clockGrid = document.getElementById('clockGrid');
+  const localTimeDisplay = document.getElementById('localTime');
+
+  let currentFilter = '';
+
+  function renderCards() {
+    const filteredCities = CITIES.filter(city => 
+      city.name.includes(currentFilter) || 
+      city.en.toLowerCase().includes(currentFilter.toLowerCase())
+    );
+
+    if (filteredCities.length === 0) {
+      clockGrid.innerHTML = '<div class="empty-state">没有找到相关城市，请换个关键词试试 🔍</div>';
+      return;
+    }
+
+    clockGrid.innerHTML = filteredCities.map(city => `
+      <div class="clock-card" data-timezone="${city.timezone}">
+        <div class="card-header">
+          <div class="city-info">
+            <h3>${city.name} <span style="font-size:12px;color:var(--text-sub);font-weight:normal">${city.en}</span></h3>
+            <div class="timezone">${city.timezone}</div>
+          </div>
+          <div class="status-icon" id="icon-${city.timezone}">⏳</div>
+        </div>
+        <div class="time-display">
+          <span class="hours-mins" id="time-${city.timezone}">--:--</span>
+          <span class="seconds" id="sec-${city.timezone}">--</span>
+        </div>
+        <div class="date-display">
+          <span id="date-${city.timezone}">加载中...</span>
+        </div>
+      </div>
+    `).join('');
+    
+    updateAllTimes();
+  }
+
+  function updateAllTimes() {
+    const now = new Date();
+
+    localTimeDisplay.textContent = now.toLocaleTimeString('zh-CN', { hour12: false });
+
+    const cards = document.querySelectorAll('.clock-card');
+    
+    cards.forEach(card => {
+      const timezone = card.getAttribute('data-timezone');
+      
+      const timeFormatter = new Intl.DateTimeFormat('zh-CN', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23'
+      });
+      
+      const secFormatter = new Intl.DateTimeFormat('zh-CN', {
+        timeZone: timezone,
+        second: '2-digit'
+      });
+
+      const dateFormatter = new Intl.DateTimeFormat('zh-CN', {
+        timeZone: timezone,
+        month: 'short',
+        day: 'numeric',
+        weekday: 'short'
+      });
+
+      const hourFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: 'numeric',
+        hourCycle: 'h23'
+      });
+
+      const timeStr = timeFormatter.format(now);
+      const secStr = secFormatter.format(now);
+      const dateStr = dateFormatter.format(now);
+      const currentHour = parseInt(hourFormatter.format(now), 10);
+
+      document.getElementById(`time-${timezone}`).textContent = timeStr;
+      document.getElementById(`sec-${timezone}`).textContent = secStr;
+      document.getElementById(`date-${timezone}`).textContent = dateStr;
+
+      const iconElement = document.getElementById(`icon-${timezone}`);
+      if (currentHour >= 6 && currentHour < 18) {
+        iconElement.textContent = '☀️';
+        iconElement.title = '白天';
+      } else {
+        iconElement.textContent = '🌙';
+        iconElement.title = '黑夜';
+      }
+    });
+  }
+
+  searchInput.addEventListener('input', (e) => {
+    currentFilter = e.target.value.trim();
+    renderCards();
+  });
+
+  renderCards();
+  setInterval(updateAllTimes, 1000);
+
+</script>
+</body>
+</html>
